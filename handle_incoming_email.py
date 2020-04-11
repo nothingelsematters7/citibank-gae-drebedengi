@@ -3,21 +3,26 @@
 
 import logging
 import re
+import os
 
 from google.appengine.ext.webapp.mail_handlers import InboundMailHandler
 from google.appengine.api import mail
 
 import webapp2
 
+DD_MAIL_CODE = os.environ['DD_MAIL_CODE']
+USER_EMAIL = os.environ['USER_EMAIL']
+BANK_EMAIL = os.environ['BANK_EMAIL']
+APPROVED_EMAILS = [USER_EMAIL.lower(), BANK_EMAIL.lower()]
+
+
 class LogSenderHandler(InboundMailHandler):
     def receive(self, mail_message):
-        dd_mail_code = "XXXXXXXXXXXXXXXXXXXXXXXXXX_XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX"
-        dd_user_email = "sitnikov.vladimir@gmail.com"
-        citi = "citialerts.russia@citicorp.com"
-        lower_sender = mail_message.sender.lower()
-        if dd_user_email not in lower_sender and citi not in lower_sender:
+        sender = mail_message.sender.lower()
+        if sender not in APPROVED_EMAILS:
             logging.warn("Parser: sender " + mail_message.sender + " is not approved")
             return
+
         plaintext_bodies = mail_message.bodies('text/plain')
 
         res = []
@@ -31,31 +36,39 @@ class LogSenderHandler(InboundMailHandler):
                 # Decodes base64 and friends
                 plaintext = body.decode()
 
-            v = ""
-            if citi in plaintext or citi in mail_message.sender or "www.citibank.ru" in plaintext:
-                v = self.parseCitialert(plaintext)
-                if v:
-                    res.append(v)
+            v = self.parseAlfabank(plaintext)
 
-            if v == "":
+            if v:
+                res.append(v)
+            else:
                 logging.warning("Unable to parse mail %", plaintext)
-                mail.send_mail_to_admins(sender=dd_user_email,
-                           subject="DrebeDengi parser: unable to parse email",
-                           body=plaintext)
+                mail.send_mail_to_admins(
+                    sender=USER_EMAIL, subject="DrebeDengi parser: unable to parse email",
+                    body=plaintext)
 
         if len(res) > 0:
-            mail.send_mail_to_admins(sender=dd_user_email,
+            mail.send_mail_to_admins(sender=USER_EMAIL,
                                      subject="DrebeDengi parser: " + "; ".join(res),
                                      body="Parse result:\n" + "\n".join(res))
-            mail.send_mail(sender=dd_user_email,
+
+            mail.send_mail(sender=USER_EMAIL,
                            to="parser@x-pro.ru",
-                           subject="Please parse " + dd_mail_code,
-                           body=dd_mail_code,
+                           subject="Please parse " + DD_MAIL_CODE,
+                           body=DD_MAIL_CODE,
                            attachments=[('lines.txt', "\n".join(res))])
+
+            logging.info("Success result sent to DrebeDengi")
+        else:
+            logging.warning('Nothing sent to Drebedengi... empty result parsed')
 
         logging.info("Parse result: %s", "; ".join(res))
 
+    def parseAlfabank(self, txt):
+        logging.debug('Text to parse: %', txt)
+        return None
+
     def parseCitialert(self, txt):
+        # m = re.search(ur'')
         m = re.search(ur'Покупка на сумму (?P<summ>[0-9.]+) (?P<currency>\w+) была произведена по Вашему счету \*\*\s*(?P<account>\d+)\s+Торговая точка: (?P<operation>.*?)\s*$\s+Дата операции: (?P<date>\d\d/\d\d/\d\d\d\d)', txt, re.MULTILINE)
         if m:
             return self.result(u"покупка", m.group("summ"), m.group("currency"), m.group("account"), m.group("operation"))

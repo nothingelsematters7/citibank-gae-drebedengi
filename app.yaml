@@ -8,3 +8,8 @@ handlers:
 
 inbound_services:
 - mail
+
+env_variables:
+  DD_MAIL_CODE: "XXXXXXXXXXXXXXXXXXXXXXXXXX_XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX"
+  USER_EMAIL: "user@email.com"
+  BANK_EMAIL: "email@bank.com"
