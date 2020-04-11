@@ -67,7 +67,7 @@ class LogSenderHandler(InboundMailHandler):
     def parseAlfabank(self, txt):
         logging.debug('Text to parse: %s', txt)
 
-        m = re.search(ur'Карта (?P<card_num>[0-9.]+)\s*Со счёта: (?P<account_num>[A-Z0-9]+)\s*Оплата товаров/услуг\s*Успешно\s*Сумма:(?P<amount>[0-9.]+) (?P<currency>\w+)\s*Остаток:[0-9.]+ \w+\s*На время:(?P<datetime>\d\d:\d\d:\d\d)\s*(?P<place>.*)\s*(?P<trx_datetime>\d\d.\d\d.\d{4} \d\d:\d\d:\d\d)', txt, re.MULTILINE)
+        m = re.search(ur'Карта (?P<card_num>[0-9.]+)\s*Со счёта: (?P<account_num>[A-Z0-9]+)\s*Оплата товаров/услуг\s*Успешно\s*Сумма:(?P<amount>[0-9.]+) (?P<currency>\w+)\s*Остаток:[0-9.]+ \w+\s*На время:(?P<datetime>\d\d:\d\d:\d\d)\s*(?P<place>[^\r\n]*)\s*(?P<trx_datetime>\d\d.\d\d.\d{4} \d\d:\d\d:\d\d)', txt, re.MULTILINE)
 
         logging.debug('Regex result: %s', m)
 
