@@ -72,7 +72,8 @@ class LogSenderHandler(InboundMailHandler):
         logging.debug('Regex result: %s', m)
 
         if m:
-            l = ['-' + m.group('amount'), m.group('currency'), m.group('place'), m.group('account_num')]
+            l = ['-' + m.group('amount'), m.group('currency'), m.group('place'), '', '', u'Счёт: ' + m.group('account_num'), '']
+
             l = [i.replace('"', '') for i in l]
 
             logging.debug('List of tokens: %s', l)
