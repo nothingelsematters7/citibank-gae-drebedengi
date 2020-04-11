@@ -11,7 +11,7 @@ from google.appengine.api import mail
 import webapp2
 
 DD_MAIL_CODE = os.environ['DD_MAIL_CODE']
-USER_EMAIL = os.environ['USER_EMAIL']
+USER_EMAIL = os.environ['DD_USER_EMAIL']
 BANK_EMAIL = os.environ['BANK_EMAIL']
 APPROVED_EMAILS = [USER_EMAIL.lower(), BANK_EMAIL.lower()]
 
@@ -19,8 +19,8 @@ APPROVED_EMAILS = [USER_EMAIL.lower(), BANK_EMAIL.lower()]
 class LogSenderHandler(InboundMailHandler):
     def receive(self, mail_message):
         sender = mail_message.sender.lower()
-        if sender not in APPROVED_EMAILS:
-            logging.warn("Parser: sender " + mail_message.sender + " is not approved")
+        if APPROVED_EMAILS[0] not in sender and APPROVED_EMAILS[1] not in sender:
+            logging.warn("Parser: sender %s is not approved", mail_message.sender)
             return
 
         plaintext_bodies = mail_message.bodies('text/plain')
@@ -41,9 +41,10 @@ class LogSenderHandler(InboundMailHandler):
             if v:
                 res.append(v)
             else:
-                logging.warning("Unable to parse mail %", plaintext)
+                logging.warning("Unable to parse mail %s", plaintext)
                 mail.send_mail_to_admins(
-                    sender=USER_EMAIL, subject="DrebeDengi parser: unable to parse email",
+                    sender=USER_EMAIL,
+                    subject="DrebeDengi parser: unable to parse email",
                     body=plaintext)
 
         if len(res) > 0:
@@ -64,8 +65,20 @@ class LogSenderHandler(InboundMailHandler):
         logging.info("Parse result: %s", "; ".join(res))
 
     def parseAlfabank(self, txt):
-        logging.debug('Text to parse: %', txt)
+        logging.debug('Text to parse: %s', txt)
+
+        m = re.search(ur'Карта (?P<card_num>[0-9.]+)\s*Со счёта: (?P<account_num>[A-Z0-9]+)\s*Оплата товаров/услуг\s*Успешно\s*Сумма:(?P<amount>[0-9.]+) (?P<currency>\w+)\s*Остаток:[0-9.]+ \w+\s*На время:(?P<datetime>\d\d:\d\d:\d\d)\s*(?P<place>.*)\s*(?P<trx_datetime>\d\d.\d\d.\d{4} \d\d:\d\d:\d\d)', txt, re.MULTILINE)
+
+        logging.debug('Regex result: %s', m)
+
+        if m:
+            l = ['-' + m.group('amount'), m.group('currency'), m.group('place'), m.group('account_num')]
+            l = [i.replace('"', '') for i in l]
+
+            return l.join(';')
+
         return None
+
 
     def parseCitialert(self, txt):
         # m = re.search(ur'')
