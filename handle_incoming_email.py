@@ -75,7 +75,8 @@ class LogSenderHandler(InboundMailHandler):
             l = ['-' + m.group('amount'), m.group('currency'), m.group('place'), m.group('account_num')]
             l = [i.replace('"', '') for i in l]
 
-            return l.join(';')
+            logging.debug('List of tokens: %s', l)
+            return ';'.join(l)
 
         return None
 
