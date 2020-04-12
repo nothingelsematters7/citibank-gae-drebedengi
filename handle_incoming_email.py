@@ -67,14 +67,38 @@ class LogSenderHandler(InboundMailHandler):
     def parseAlfabank(self, txt):
         logging.debug('Text to parse: %s', txt)
 
-        m = re.search(ur'Карта (?P<card_num>[0-9.]+)\s*Со счёта: (?P<account_num>[A-Z0-9]+)\s*Оплата товаров/услуг\s*Успешно\s*Сумма:(?P<amount>[0-9.]+) (?P<currency>\w+)\s*Остаток:[0-9.]+ \w+\s*На время:(?P<datetime>\d\d:\d\d:\d\d)\s*(?P<place>[^\r\n]*)\s*(?P<trx_datetime>\d\d.\d\d.\d{4} \d\d:\d\d:\d\d)', txt, re.MULTILINE)
-
-        logging.debug('Regex result: %s', m)
+        m = re.search(
+            ur'Карта (?P<card_num>[0-9.]+)$\n' +
+            ur'^.*$\n' +
+            ur'^(?P<op_type>.*)$\n' +
+            ur'^(?P<op_result>.*)$\n' +
+            ur'^Сумма:(?P<amount>[0-9.]+) (?P<currency>\w+)$\n' +
+            ur'^Остаток:[0-9.]+ \w+$\n' +
+            ur'^На время:(\d\d:\d\d:\d\d)$\n' +
+            ur'^(?P<place>[^\r\n]*)$\n' +
+            ur'^(?P<day>\d\d)\.(?P<month>\d\d)\.(?P<year>\d{4}) (?P<datetime>\d\d:\d\d:\d\d)',
+            txt,
+            re.MULTILINE
+        )
 
         if m:
-            l = ['-' + m.group('amount'), m.group('currency'), m.group('place'), '', '', u'Счёт: ' + m.group('account_num'), '']
+            year = m.group('year')
+            month = m.group('month')
+            day = m.group('day')
+            trx_dt = '%s-%s-%s %s' % (year, month, day, m.group('datetime'))
 
-            l = [i.replace('"', '') for i in l]
+            op_result = m.group('op_result')
+            op_type = m.group('op_type')
+
+            l = [
+                '-' + m.group('amount'), #  SUM
+                m.group('currency'),  #  CURRENCY
+                m.group('place'),  #  OBJECT
+                m.group('card_num'),  #  ACCOUNT
+                trx_dt, #  DATE
+                u' '.join([op_result, op_type]), #  COMMENT
+                ''
+            ]
 
             logging.debug('List of tokens: %s', l)
             return ';'.join(l)
