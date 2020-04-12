@@ -68,7 +68,7 @@ class LogSenderHandler(InboundMailHandler):
         logging.debug('Text to parse: %s', txt)
 
         m = re.search(
-            ur'Карта (?P<card_num>[0-9.]+)$\n^.*$\n^(?P<op_type>.*)$\n^(?P<op_result>.*)$\n^Сумма:(?P<amount>[0-9.]+) (?P<currency>\w+)$\n^Остаток:[0-9.]+ \w+$\n^На время:(\d\d:\d\d:\d\d)$\n^(?P<place>[^\r\n]*)$\n^(?P<day>\d\d)\.(?P<month>\d\d)\.(?P<year>\d{4}) (?P<datetime>\d\d:\d\d:\d\d)',
+            ur'Карта (?P<card_num>[0-9.]+)$[\r\n]+^.*$\n^(?P<op_type>.*)$[\r\n]+^(?P<op_result>.*)$[\r\n]+^Сумма:(?P<amount>[0-9.]+) (?P<currency>\w+)$[\r\n]+^Остаток:[0-9.]+ \w+$[\r\n]+^На время:(\d\d:\d\d:\d\d)$[\r\n]+^(?P<place>[^\r\n]*)$[\r\n]+^(?P<day>\d\d)\.(?P<month>\d\d)\.(?P<year>\d{4}) (?P<datetime>\d\d:\d\d:\d\d)',
             txt,
             re.MULTILINE
         )
