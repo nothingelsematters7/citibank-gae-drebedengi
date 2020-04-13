@@ -86,10 +86,10 @@ class LogSenderHandler(InboundMailHandler):
             l = [
                 m.group('amount'), #  SUM
                 m.group('currency'),  #  CURRENCY
-                m.group('place'),  #  OBJECT
-                m.group('card_num'),  #  ACCOUNT
+                u' '.join([op_type, op_result]),  # Операция + Успешно
+                m.group('card_num'),  # ACCOUNT
                 trx_dt, #  DATE
-                u' '.join([op_type, op_result]), #  COMMENT
+                m.group('place'),  # OBJECT
                 ''
             ]
 
@@ -114,10 +114,9 @@ class LogSenderHandler(InboundMailHandler):
             l = [
                 m.group('amount'),  # SUM
                 m.group('currency'),  # CURRENCY
-                '',  # OBJECT
+                u' '.join([op_type, op_result]),  # Операция + Успешно
                 m.group('card_num'),  # ACCOUNT
                 trx_dt,  # DATE
-                u' '.join([op_type, op_result]),  # COMMENT
                 ''
             ]
 
