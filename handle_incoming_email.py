@@ -66,6 +66,7 @@ class LogSenderHandler(InboundMailHandler):
 
     def parseAlfabank(self, txt):
         logging.debug('Text to parse: %s', txt)
+        logging.debug('Text repr to parse: %s', repr(txt))
 
         m = re.search(
             ur'Карта (?P<card_num>[0-9.]+)\s+^.*\s+^(?P<op_type>[^\r]*)\s+^(?P<op_result>[^\r]*)\s+^Сумма:(?P<amount>[0-9.]+) (?P<currency>\w+)\s+^Остаток:[0-9.]+ \w+\s+^На время:(\d\d:\d\d:\d\d)\s+^(?P<place>[^\r]*)\s+^(?P<day>\d\d)\.(?P<month>\d\d)\.(?P<year>\d{4}) (?P<datetime>\d\d:\d\d:\d\d)',
@@ -83,17 +84,46 @@ class LogSenderHandler(InboundMailHandler):
             op_type = m.group('op_type')
 
             l = [
-                '-' + m.group('amount'), #  SUM
+                m.group('amount'), #  SUM
                 m.group('currency'),  #  CURRENCY
                 m.group('place'),  #  OBJECT
                 m.group('card_num'),  #  ACCOUNT
                 trx_dt, #  DATE
-                u' '.join([op_result, op_type]), #  COMMENT
+                u' '.join([op_type, op_result]), #  COMMENT
                 ''
             ]
 
             logging.debug('List of tokens: %s', l)
             return ';'.join(l)
+
+        m = re.search(
+            ur'Карта (?P<card_num>[0-9.]+)\s+^.*\s+^(?P<op_type>[^\r]*)\s+^(?P<op_result>[^\r]*)\s+^Сумма:(?P<amount>[0-9.]+) (?P<currency>\w+)\s+^Остаток:[0-9.]+ \w+\s+^На время:(?P<datetime>\d\d:\d\d:\d\d)\s+^(?P<day>\d\d)\.(?P<month>\d\d)\.(?P<year>\d{4})',
+            txt,
+            re.MULTILINE
+        )
+
+        if m:
+            year = m.group('year')
+            month = m.group('month')
+            day = m.group('day')
+            trx_dt = '%s-%s-%s %s' % (year, month, day, m.group('datetime'))
+
+            op_result = m.group('op_result')
+            op_type = m.group('op_type')
+
+            l = [
+                m.group('amount'),  # SUM
+                m.group('currency'),  # CURRENCY
+                '',  # OBJECT
+                m.group('card_num'),  # ACCOUNT
+                trx_dt,  # DATE
+                u' '.join([op_type, op_result]),  # COMMENT
+                ''
+            ]
+
+            logging.debug('List of tokens: %s', l)
+            return ';'.join(l)
+
 
         return None
 
