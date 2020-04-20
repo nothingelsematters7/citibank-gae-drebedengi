@@ -69,7 +69,7 @@ class LogSenderHandler(InboundMailHandler):
         logging.debug('Text repr to parse: %s', repr(txt))
 
         m = re.search(
-            ur'Карта (?P<card_num>[0-9.]+)\s+^.*\s+^(?P<op_type>[^\r]*)\s+^(?P<op_result>[^\r]*)\s+^Сумма:(?P<amount>[0-9.]+) (?P<currency>\w+)\s+^Остаток:[0-9.]+ \w+\s+^На время:(\d\d:\d\d:\d\d)\s+^(?P<place>[^\r]*)\s+^(?P<day>\d\d)\.(?P<month>\d\d)\.(?P<year>\d{4}) (?P<datetime>\d\d:\d\d:\d\d)',
+            ur'Карта (?P<card_num>[0-9.]+)\s+^.*\s+^(?P<op_type>[^\r]*)\s+^(?P<op_result>[^\r]*)\s+^Сумма:((?P<trx_amount>[0-9.]+) (?P<trx_currency>\w+) \((?P<user_amount>[0-9.]+) (?P<user_currency>\w+)\))|((?P<amount>[0-9.]+) (?P<currency>\w+))\s+^Остаток:[0-9.]+ \w+\s+^На время:(\d\d:\d\d:\d\d)\s+^(?P<place>[^\r]*)\s+^(?P<day>\d\d)\.(?P<month>\d\d)\.(?P<year>\d{4}) (?P<datetime>\d\d:\d\d:\d\d)',
             txt,
             re.MULTILINE
         )
@@ -83,9 +83,16 @@ class LogSenderHandler(InboundMailHandler):
             op_result = m.group('op_result')
             op_type = m.group('op_type')
 
+            if m.group('user_amount'):
+                amount = m.group('user_amount')
+                currency = m.group('user_currency')
+            else:
+                amount = m.group('amount')
+                currency = m.group('currency')
+
             l = [
-                m.group('amount'), #  SUM
-                m.group('currency'),  #  CURRENCY
+                amount,
+                currency,
                 u' '.join([op_type, op_result]),  # Операция + Успешно
                 m.group('card_num'),  # ACCOUNT
                 trx_dt, #  DATE
