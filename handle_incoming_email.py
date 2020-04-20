@@ -69,7 +69,7 @@ class LogSenderHandler(InboundMailHandler):
         logging.debug('Text repr to parse: %s', repr(txt))
 
         m = re.search(
-            ur'Карта (?P<card_num>[0-9.]+)\s+^.*\s+^(?P<op_type>[^\r]*)\s+^(?P<op_result>[^\r]*)\s+^Сумма:((?P<trx_amount>[0-9.]+) (?P<trx_currency>\w+) \((?P<user_amount>[0-9.]+) (?P<user_currency>\w+)\))|((?P<amount>[0-9.]+) (?P<currency>\w+))\s+^Остаток:[0-9.]+ \w+\s+^На время:(\d\d:\d\d:\d\d)\s+^(?P<place>[^\r]*)\s+^(?P<day>\d\d)\.(?P<month>\d\d)\.(?P<year>\d{4}) (?P<datetime>\d\d:\d\d:\d\d)',
+            ur'Карта (?P<card_num>[0-9.]+)\s+^.*\s+^(?P<op_type>[^\r]*)\s+^(?P<op_result>[^\r]*)\s+^Сумма:(((?P<trx_amount>[0-9.]+) (?P<trx_currency>\w+) \((?P<user_amount>[0-9.]+) (?P<user_currency>\w+)\))|((?P<amount>[0-9.]+) (?P<currency>\w+)))\s+^Остаток:(?P<left_amount>[0-9.]+) (?P<left_currency>\w+)\s+^На время:(\d\d:\d\d:\d\d)\s+^(?P<place>[^\r]*)\s+^(?P<day>\d\d)\.(?P<month>\d\d)\.(?P<year>\d{4}) (?P<datetime>\d\d:\d\d:\d\d)',
             txt,
             re.MULTILINE
         )
@@ -97,6 +97,7 @@ class LogSenderHandler(InboundMailHandler):
                 m.group('card_num'),  # ACCOUNT
                 trx_dt, #  DATE
                 m.group('place'),  # OBJECT
+                u'Остаток: %s %s' % (m.group('left_amount'), m.group('left_currency')),
                 ''
             ]
 
@@ -104,7 +105,7 @@ class LogSenderHandler(InboundMailHandler):
             return ';'.join(l)
 
         m = re.search(
-            ur'Карта (?P<card_num>[0-9.]+)\s+^.*\s+^(?P<op_type>[^\r]*)\s+^(?P<op_result>[^\r]*)\s+^Сумма:(?P<amount>[0-9.]+) (?P<currency>\w+)\s+^Остаток:[0-9.]+ \w+\s+^На время:(?P<datetime>\d\d:\d\d:\d\d)\s+^(?P<day>\d\d)\.(?P<month>\d\d)\.(?P<year>\d{4})',
+            ur'Карта (?P<card_num>[0-9.]+)\s+^.*\s+^(?P<op_type>[^\r]*)\s+^(?P<op_result>[^\r]*)\s+^Сумма:(?P<amount>[0-9.]+) (?P<currency>\w+)\s+^Остаток:(?P<left_amount>[0-9.]+) (?P<left_currency>\w+)\s+^На время:(?P<datetime>\d\d:\d\d:\d\d)\s+^(?P<day>\d\d)\.(?P<month>\d\d)\.(?P<year>\d{4})',
             txt,
             re.MULTILINE
         )
@@ -124,12 +125,12 @@ class LogSenderHandler(InboundMailHandler):
                 u' '.join([op_type, op_result]),  # Операция + Успешно
                 m.group('card_num'),  # ACCOUNT
                 trx_dt,  # DATE
+                u'Остаток: %s %s' % (m.group('left_amount'), m.group('left_currency')),
                 ''
             ]
 
             logging.debug('List of tokens: %s', l)
             return ';'.join(l)
-
 
         return None
 
